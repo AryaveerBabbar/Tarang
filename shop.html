@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shop — Tarang</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site">
+  <nav class="site-nav">
+    <a href="index.html" class="logo">Tarang</a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="shop.html" class="active">Shop</a>
+      <a href="index.html#story">Our story</a>
+    </div>
+    <div class="nav-icons">
+      <a href="wishlist.html" class="icon-link" aria-label="Wishlist">
+        <svg viewBox="0 0 24 24"><path d="M12 21s-7-4.35-9.5-8.5C.5 8.5 2.5 5 6 5c2 0 3.5 1 4 2.5C10.5 6 12 5 14 5c3.5 0 5.5 3.5 3.5 7.5C19 16.65 12 21 12 21z"/></svg>
+        <span class="badge" data-wishlist-count>0</span>
+      </a>
+      <a href="cart.html" class="icon-link" aria-label="Cart">
+        <svg viewBox="0 0 24 24"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+        <span class="badge" data-cart-count>0</span>
+      </a>
+    </div>
+  </nav>
+</header>
+
+<section class="tight">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <h2>All bracelets</h2>
+        <p id="resultCount">Showing every piece in the collection.</p>
+      </div>
+    </div>
+    <div class="filters" id="filters"></div>
+    <div class="grid" id="shopGrid"></div>
+  </div>
+</section>
+
+<footer class="site">
+  <div class="wrap">
+    <div>
+      <div class="logo">Tarang</div>
+      <p style="margin-top:10px; max-width:32ch;">Handmade bracelets, made in small batches in India.</p>
+    </div>
+    <div>
+      <div style="font-weight:600; color:var(--bone); margin-bottom:10px;">Shop</div>
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <a href="shop.html">All bracelets</a>
+        <a href="cart.html">Cart</a>
+        <a href="wishlist.html">Wishlist</a>
+      </div>
+    </div>
+    <div>
+      <div style="font-weight:600; color:var(--bone); margin-bottom:10px;">Contact</div>
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <a href="mailto:hello@tarang.example">hello@tarang.example</a>
+        <span>Agra, Uttar Pradesh, India</span>
+      </div>
+    </div>
+  </div>
+  <div class="wrap foot-note">© <span id="yr"></span> Tarang. All rights reserved.</div>
+</footer>
+
+<script src="js/products.js"></script>
+<script src="js/store.js"></script>
+<script>
+  document.getElementById("yr").textContent = new Date().getFullYear();
+
+  const categories = ["All", ...new Set(PRODUCTS.map(p => p.category))];
+  let activeCat = "All";
+
+  function renderFilters() {
+    document.getElementById("filters").innerHTML = categories.map(c =>
+      `<button class="filter-pill ${c === activeCat ? "active" : ""}" data-cat="${c}">${c}</button>`
+    ).join("");
+  }
+  function renderGrid() {
+    const list = activeCat === "All" ? PRODUCTS : PRODUCTS.filter(p => p.category === activeCat);
+    document.getElementById("shopGrid").innerHTML = list.map(cardHTML).join("");
+    document.getElementById("resultCount").textContent =
+      `Showing ${list.length} piece${list.length === 1 ? "" : "s"}${activeCat === "All" ? "" : " in " + activeCat}.`;
+  }
+  document.getElementById("filters").addEventListener("click", (e) => {
+    const cat = e.target.closest("[data-cat]")?.getAttribute("data-cat");
+    if (cat) { activeCat = cat; renderFilters(); renderGrid(); }
+  });
+
+  renderFilters();
+  renderGrid();
+</script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order confirmed — Tarang</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site">
+  <nav class="site-nav">
+    <a href="index.html" class="logo">Tarang</a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="shop.html">Shop</a>
+    </div>
+    <div class="nav-icons">
+      <a href="wishlist.html" class="icon-link" aria-label="Wishlist">
+        <svg viewBox="0 0 24 24"><path d="M12 21s-7-4.35-9.5-8.5C.5 8.5 2.5 5 6 5c2 0 3.5 1 4 2.5C10.5 6 12 5 14 5c3.5 0 5.5 3.5 3.5 7.5C19 16.65 12 21 12 21z"/></svg>
+        <span class="badge" data-wishlist-count>0</span>
+      </a>
+      <a href="cart.html" class="icon-link" aria-label="Cart">
+        <svg viewBox="0 0 24 24"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+        <span class="badge" data-cart-count>0</span>
+      </a>
+    </div>
+  </nav>
+</header>
+
+<div class="status-msg">
+  <h1>Thank you — your order is confirmed.</h1>
+  <p id="orderNote">We'll email a confirmation shortly and start hand-finishing your piece.</p>
+  <div style="margin-top:34px;">
+    <a href="shop.html" class="btn btn-ink">Continue shopping</a>
+  </div>
+</div>
+
+<script src="js/products.js"></script>
+<script src="js/store.js"></script>
+<script>
+  const id = new URLSearchParams(location.search).get("payment_id");
+  if (id) {
+    document.getElementById("orderNote").textContent =
+      "Payment ID " + id + ". We'll email a confirmation shortly and start hand-finishing your piece.";
+  }
+</script>
+</body>
+</html>

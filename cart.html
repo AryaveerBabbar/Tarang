@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your cart — Tarang</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site">
+  <nav class="site-nav">
+    <a href="index.html" class="logo">Tarang</a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="shop.html">Shop</a>
+      <a href="index.html#story">Our story</a>
+    </div>
+    <div class="nav-icons">
+      <a href="wishlist.html" class="icon-link" aria-label="Wishlist">
+        <svg viewBox="0 0 24 24"><path d="M12 21s-7-4.35-9.5-8.5C.5 8.5 2.5 5 6 5c2 0 3.5 1 4 2.5C10.5 6 12 5 14 5c3.5 0 5.5 3.5 3.5 7.5C19 16.65 12 21 12 21z"/></svg>
+        <span class="badge" data-wishlist-count>0</span>
+      </a>
+      <a href="cart.html" class="icon-link" aria-label="Cart">
+        <svg viewBox="0 0 24 24"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+        <span class="badge" data-cart-count>0</span>
+      </a>
+    </div>
+  </nav>
+</header>
+
+<section class="tight">
+  <div class="wrap">
+    <div class="section-head"><div><h2>Your cart</h2></div></div>
+    <div id="cartRoot"></div>
+  </div>
+</section>
+
+<footer class="site">
+  <div class="wrap">
+    <div>
+      <div class="logo">Tarang</div>
+      <p style="margin-top:10px; max-width:32ch;">Handmade bracelets, made in small batches in India.</p>
+    </div>
+    <div>
+      <div style="font-weight:600; color:var(--bone); margin-bottom:10px;">Shop</div>
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <a href="shop.html">All bracelets</a>
+        <a href="cart.html">Cart</a>
+        <a href="wishlist.html">Wishlist</a>
+      </div>
+    </div>
+    <div>
+      <div style="font-weight:600; color:var(--bone); margin-bottom:10px;">Contact</div>
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <a href="mailto:hello@tarang.example">hello@tarang.example</a>
+        <span>Agra, Uttar Pradesh, India</span>
+      </div>
+    </div>
+  </div>
+  <div class="wrap foot-note">© <span id="yr"></span> Tarang. All rights reserved.</div>
+</footer>
+
+<script src="js/products.js"></script>
+<script src="js/store.js"></script>
+<script>
+  document.getElementById("yr").textContent = new Date().getFullYear();
+  const SHIP_THRESHOLD = 1499;
+  const SHIP_COST = 79;
+
+  function render() {
+    const items = cartLineItems();
+    const root = document.getElementById("cartRoot");
+    if (!items.length) {
+      root.innerHTML = `<div class="empty-state"><h2>Your cart is empty</h2><p>Find something you'll want to wear.</p><a href="shop.html" class="btn btn-ink">Browse the shop</a></div>`;
+      return;
+    }
+    const subtotal = cartTotal();
+    const shipping = subtotal >= SHIP_THRESHOLD ? 0 : SHIP_COST;
+    const total = subtotal + shipping;
+
+    root.innerHTML = `
+      <div class="cart-layout">
+        <div>
+          ${items.map(item => `
+            <div class="line-item">
+              <div class="thumb">${braceletArt(item, 84)}</div>
+              <div>
+                <a href="product.html?id=${item.id}" class="li-name">${item.name}</a>
+                <div class="li-cat">${item.category} · ${formatINR(item.price)}</div>
+                <button class="li-remove" data-remove="${item.id}">Remove</button>
+              </div>
+              <div class="qty-control">
+                <button data-dec="${item.id}" aria-label="Decrease quantity">−</button>
+                <span>${item.qty}</span>
+                <button data-inc="${item.id}" aria-label="Increase quantity">+</button>
+              </div>
+              <div class="price">${formatINR(item.price * item.qty)}</div>
+            </div>
+          `).join("")}
+        </div>
+        <div class="summary-box">
+          <div class="summary-row"><span>Subtotal</span><span>${formatINR(subtotal)}</span></div>
+          <div class="summary-row"><span>Shipping</span><span>${shipping === 0 ? "Free" : formatINR(shipping)}</span></div>
+          ${shipping > 0 ? `<div class="summary-row" style="font-size:0.8rem;">Free shipping over ${formatINR(SHIP_THRESHOLD)}</div>` : ""}
+          <div class="summary-row total"><span>Total</span><span>${formatINR(total)}</span></div>
+          <a href="checkout.html" class="btn btn-brass btn-block" style="margin-top:18px;">Checkout</a>
+          <a href="shop.html" class="btn btn-ghost btn-block" style="margin-top:10px;">Continue shopping</a>
+        </div>
+      </div>`;
+  }
+
+  document.getElementById("cartRoot").addEventListener("click", (e) => {
+    const inc = e.target.closest("[data-inc]")?.getAttribute("data-inc");
+    const dec = e.target.closest("[data-dec]")?.getAttribute("data-dec");
+    const rem = e.target.closest("[data-remove]")?.getAttribute("data-remove");
+    const cart = getCart();
+    if (inc) setQty(inc, (cart[inc] || 0) + 1);
+    if (dec) setQty(dec, (cart[dec] || 0) - 1);
+    if (rem) removeFromCart(rem);
+    render();
+  });
+
+  render();
+</script>
+</body>
+</html>

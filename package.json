@@ -1,0 +1,9 @@
+{
+  "name": "tarang-store",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tarang handmade bracelet store — static frontend + Vercel serverless functions for Razorpay checkout.",
+  "dependencies": {
+    "razorpay": "^2.9.4"
+  }
+}

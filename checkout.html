@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checkout — Tarang</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site">
+  <nav class="site-nav">
+    <a href="index.html" class="logo">Tarang</a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="shop.html">Shop</a>
+      <a href="index.html#story">Our story</a>
+    </div>
+    <div class="nav-icons">
+      <a href="wishlist.html" class="icon-link" aria-label="Wishlist">
+        <svg viewBox="0 0 24 24"><path d="M12 21s-7-4.35-9.5-8.5C.5 8.5 2.5 5 6 5c2 0 3.5 1 4 2.5C10.5 6 12 5 14 5c3.5 0 5.5 3.5 3.5 7.5C19 16.65 12 21 12 21z"/></svg>
+        <span class="badge" data-wishlist-count>0</span>
+      </a>
+      <a href="cart.html" class="icon-link" aria-label="Cart">
+        <svg viewBox="0 0 24 24"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+        <span class="badge" data-cart-count>0</span>
+      </a>
+    </div>
+  </nav>
+</header>
+
+<section class="tight">
+  <div class="wrap">
+    <div class="section-head"><div><h2>Checkout</h2></div></div>
+    <div id="checkoutRoot"></div>
+  </div>
+</section>
+
+<footer class="site">
+  <div class="wrap">
+    <div class="logo">Tarang</div>
+  </div>
+  <div class="wrap foot-note">© <span id="yr"></span> Tarang. All rights reserved.</div>
+</footer>
+
+<script src="js/products.js"></script>
+<script src="js/store.js"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+  document.getElementById("yr").textContent = new Date().getFullYear();
+  const SHIP_THRESHOLD = 1499;
+  const SHIP_COST = 79;
+
+  const items = cartLineItems();
+  const root = document.getElementById("checkoutRoot");
+
+  if (!items.length) {
+    root.innerHTML = `<div class="empty-state"><h2>Your cart is empty</h2><p>Add something before checking out.</p><a href="shop.html" class="btn btn-ink">Browse the shop</a></div>`;
+  } else {
+    const subtotal = cartTotal();
+    const shipping = subtotal >= SHIP_THRESHOLD ? 0 : SHIP_COST;
+    const total = subtotal + shipping;
+
+    root.innerHTML = `
+      <div class="checkout-layout">
+        <form id="shipForm">
+          <h3 style="font-family:'Fraunces',serif; font-weight:500; margin-bottom:18px;">Shipping details</h3>
+          <div class="form-row">
+            <div class="form-group"><label for="name">Full name</label><input id="name" required></div>
+            <div class="form-group"><label for="phone">Phone</label><input id="phone" required pattern="[0-9]{10}" title="10-digit mobile number"></div>
+          </div>
+          <div class="form-group"><label for="email">Email</label><input id="email" type="email" required></div>
+          <div class="form-group"><label for="address">Address</label><textarea id="address" rows="2" required></textarea></div>
+          <div class="form-row">
+            <div class="form-group"><label for="city">City</label><input id="city" required></div>
+            <div class="form-group"><label for="state">State</label><input id="state" required></div>
+          </div>
+          <div class="form-group" style="max-width:200px;"><label for="pincode">Pincode</label><input id="pincode" required pattern="[0-9]{6}" title="6-digit pincode"></div>
+          <p id="formError" style="display:none; color:var(--rosewood); font-size:0.88rem; margin-top:6px;"></p>
+        </form>
+        <div class="summary-box">
+          ${items.map(i => `<div class="mini-line"><span>${i.name} × ${i.qty}</span><span>${formatINR(i.price * i.qty)}</span></div>`).join("")}
+          <div class="summary-row" style="margin-top:14px;"><span>Subtotal</span><span>${formatINR(subtotal)}</span></div>
+          <div class="summary-row"><span>Shipping</span><span>${shipping === 0 ? "Free" : formatINR(shipping)}</span></div>
+          <div class="summary-row total"><span>Total</span><span>${formatINR(total)}</span></div>
+          <button class="btn btn-brass btn-block" id="payBtn" style="margin-top:18px;">Pay ${formatINR(total)}</button>
+          <p style="font-size:0.78rem; color:var(--text-muted); margin-top:12px;">Payments are handled securely by Razorpay. Cards, UPI, netbanking and wallets accepted.</p>
+        </div>
+      </div>`;
+
+    document.getElementById("payBtn").addEventListener("click", async (e) => {
+      e.preventDefault();
+      const form = document.getElementById("shipForm");
+      const errEl = document.getElementById("formError");
+      if (!form.reportValidity()) return;
+
+      const shipping_info = {
+        name: document.getElementById("name").value,
+        phone: document.getElementById("phone").value,
+        email: document.getElementById("email").value,
+        address: document.getElementById("address").value,
+        city: document.getElementById("city").value,
+        state: document.getElementById("state").value,
+        pincode: document.getElementById("pincode").value,
+      };
+
+      const payBtn = document.getElementById("payBtn");
+      payBtn.disabled = true;
+      payBtn.textContent = "Preparing payment…";
+
+      try {
+        const res = await fetch("/api/create-order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            amount: total, // rupees; server converts to paise
+            items: items.map(i => ({ name: i.name, qty: i.qty, price: i.price })),
+            shipping_info,
+          }),
+        });
+        if (!res.ok) throw new Error("Could not start payment");
+        const order = await res.json();
+
+        const rzp = new Razorpay({
+          key: order.key_id,
+          amount: order.amount,
+          currency: order.currency,
+          name: "Tarang",
+          description: "Bracelet order",
+          order_id: order.id,
+          prefill: {
+            name: shipping_info.name,
+            email: shipping_info.email,
+            contact: shipping_info.phone,
+          },
+          theme: { color: "#1E2620" },
+          handler: async function (response) {
+            try {
+              const verifyRes = await fetch("/api/verify-payment", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(response),
+              });
+              const result = await verifyRes.json();
+              if (result.verified) {
+                clearCart();
+                location.href = "success.html?payment_id=" + encodeURIComponent(response.razorpay_payment_id);
+              } else {
+                errEl.textContent = "We couldn't confirm this payment. If money was deducted, contact us with your payment ID.";
+                errEl.style.display = "block";
+              }
+            } catch {
+              errEl.textContent = "We couldn't confirm this payment. If money was deducted, contact us with your payment ID.";
+              errEl.style.display = "block";
+            }
+          },
+          modal: {
+            ondismiss: function () {
+              payBtn.disabled = false;
+              payBtn.textContent = "Pay " + document.querySelector(".summary-row.total span:last-child").textContent;
+            },
+          },
+        });
+        rzp.on("payment.failed", function (resp) {
+          errEl.textContent = "Payment failed: " + resp.error.description;
+          errEl.style.display = "block";
+          payBtn.disabled = false;
+          payBtn.textContent = "Try again";
+        });
+        rzp.open();
+        payBtn.textContent = "Waiting for payment…";
+      } catch (err) {
+        errEl.textContent = "Something went wrong starting the payment. Please try again.";
+        errEl.style.display = "block";
+        payBtn.disabled = false;
+        payBtn.textContent = "Retry payment";
+      }
+    });
+  }
+</script>
+</body>
+</html>
